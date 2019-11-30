@@ -313,6 +313,26 @@ Removed options
 
 * All code associated with ``monitor v1.0`` socket handling has been removed.
 
+.. _1.7_upgrade_notes:
+
+1.7 Upgrade Notes
+-----------------
+
+New ConfigMap Options
+~~~~~~~~~~~~~~~~~~~~~
+
+  * ``enable-well-known-identities`` has been added to control the
+    initialization of the well-known identities. Well-known identities have
+    initially been added to support the managed etcd concept to allow the etcd
+    operator to bootstrap etcd while Cilium still waited on etcd to become
+    available. Cilium now uses CRDs by default which limits the use of
+    well-known identities to the managed etcd mode. With the addition of this
+    option, well-known identities are disabled by default in all new deployment
+    and only enabled if the Helm option ``etcd.managed=true`` is set. Consider
+    disabling this option if you are not using the etcd operator respectively
+    managed etcd mode to reduce the number of policy identities whitelisted for
+    each endpoint.
+
 .. _1.6_upgrade_notes:
 
 1.6 Upgrade Notes
