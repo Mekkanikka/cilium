@@ -368,16 +368,34 @@ var _ = Describe("K8sServicesTest", func() {
 						helpers.DefaultNamespace, "test-lb", 30*time.Second)
 					Expect(err).Should(BeNil(), "Cannot retrieve loadbalancer IP for test-lb")
 
-					doRequestsFromRemoteHost := func(url string, count int) {
-						By("Making %d HTTP requests from remote host to %q", count, url)
-						for i := 1; i <= count; i++ {
-							res := kubectl.Executor.Exec(helpers.CurlFail(url))
-							ExpectWithOffset(1, res).Should(helpers.CMDSuccess(),
-								"remote host can not connect to service %q", url)
-						}
+					//doRequestsFromRemoteHost := func(url string, count int) {
+					//	By("Making %d HTTP requests from remote host to %q", count, url)
+					//	for i := 1; i <= count; i++ {
+					//		res := kubectl.Executor.Exec(helpers.CurlFail(url))
+					//		ExpectWithOffset(1, res).Should(helpers.CMDSuccess(),
+					//			"remote host can not connect to service %q", url)
+					//	}
+					//}
+
+					ciliumPodK8s1, err := kubectl.GetCiliumPodOnNodeWithLabel(helpers.KubeSystemNamespace, helpers.K8s1)
+					Expect(err).Should(BeNil(), "Cannot get cilium pod on k8s1")
+					ciliumPodK8s2, err := kubectl.GetCiliumPodOnNodeWithLabel(helpers.KubeSystemNamespace, helpers.K8s2)
+					Expect(err).Should(BeNil(), "Cannot get cilium pod on k8s2")
+					monitorStop1 := kubectl.MonitorStart(helpers.KubeSystemNamespace, ciliumPodK8s1, "cilium-monitor-metallb-1.log")
+					monitorStop2 := kubectl.MonitorStart(helpers.KubeSystemNamespace, ciliumPodK8s2, "cilium-monitor-metallb-2.log")
+
+					url := lbIP
+					count := 1
+					By("Making %d HTTP requests from remote host to %q", count, url)
+					for i := 1; i <= count; i++ {
+						res := kubectl.Executor.Exec(helpers.CurlFail(url))
+						monitorStop1()
+						monitorStop2()
+						ExpectWithOffset(1, res).Should(helpers.CMDSuccess(),
+							"remote host can not connect to service %q", url)
 					}
 
-					doRequestsFromRemoteHost(lbIP, 10)
+					//doRequestsFromRemoteHost(lbIP, 10)
 				})
 			})
 		})
